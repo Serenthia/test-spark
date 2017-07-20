@@ -12,8 +12,8 @@ object ExCorrelation {
   def correlate(context: SparkSession, data: Seq[Vector], method: String): Matrix = {
     import context.implicits._
     val df = data.map(Tuple1.apply).toDF("features")
-    val Row(coeff: Matrix) = Correlation.corr(df, "features", method).head
-    coeff
+    val Row(coefficient: Matrix) = Correlation.corr(df, "features", method).head
+    coefficient
   }
 }
 

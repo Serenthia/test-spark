@@ -2,4 +2,7 @@
 *.log
 .idea
 target*
+.DS_Store
+project*
+test-spark*
 
