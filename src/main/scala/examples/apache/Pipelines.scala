@@ -1,7 +1,6 @@
 package examples.apache
 
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression, LogisticRegressionModel, LogisticRegressionTrainingSummary}
-import sparkSession.sqlContext.implicits._
 import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.sql.functions.max
 import org.apache.spark.ml.param.ParamMap

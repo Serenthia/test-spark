@@ -8,6 +8,12 @@ class Context() {
   val spark = SparkSession.builder ().appName ("DocumentationTest").master ("local").getOrCreate ()
 }
 
+case class ChiSquareResults (
+  pValues: Vector,
+  degreesOfFreedom: String,
+  statistics: Vector
+)
+
 object ExCorrelation {
   def correlate(context: SparkSession, data: Seq[Vector], method: String): Matrix = {
     import context.implicits._
@@ -16,12 +22,6 @@ object ExCorrelation {
     coefficient
   }
 }
-
-case class ChiSquareResults (
-  pValues: Vector,
-  degreesOfFreedom: String,
-  statistics: Vector
-)
 
 object ExHypothesisTesting {
   def chiSquareTest(context: SparkSession, data: Seq[(Double, Vector)]): ChiSquareResults = {
