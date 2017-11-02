@@ -1,37 +1,37 @@
 package examples.apache
 
-import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression, LogisticRegressionModel, LogisticRegressionTrainingSummary}
 import org.apache.spark.ml.linalg.Vector
-import org.apache.spark.sql.functions.max
-import org.apache.spark.ml.param.ParamMap
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.SparkSession
+
+
 
 case class ModelTestResults (
-  features: Vector,
   label: Double,
+  features: Vector,
   probability: Vector,
   prediction: Double
 )
 
-sealed trait SparkParam {
-}
-case class ParamElasticNet (value: Double = 0.0) extends SparkParam {
-  require(value >= 0 & value <= 1, "Elastic net parameter must be between 0 and 1 inclusive")
-}
-case class ParamFitIntercept (value: Boolean) extends SparkParam
-case class ParamMaxIterations (value: Int = 100) extends SparkParam {
-  require(value > 0, "Max number of iterations must be greater than 0")
-}
-case class ParamRegularisation (value: Double = 0.0) extends SparkParam
-case class ParamStandardise (value: Boolean) extends SparkParam
-case class ClassificationThreshold (value: Double) extends SparkParam {
-  require(value >= 0 & value <= 1, "Binary classification threshold must be between 0 and 1 inclusive")
-}
-case class ParamConvergenceTolerance (value: Double) extends SparkParam
+object Param {
+  sealed trait SparkParam {
+    val value: Any
+  }
 
-object ExLogisticRegression {
-
+  case class ElasticNet (value: Double = 0.0) extends SparkParam {
+    require(value >= 0 & value <= 1, "Elastic net parameter must be between 0 and 1 inclusive")
+  }
+  case class FitIntercept (value: Boolean) extends SparkParam
+  case class MaxIterations (value: Int = 100) extends SparkParam {
+    require(value > 0, "Max number of iterations must be greater than 0")
+  }
+  case class Regularisation (value: Double = 0.0) extends SparkParam
+  case class Standardise (value: Boolean) extends SparkParam
+  case class ClassificationThreshold (value: Double) extends SparkParam {
+    require(value >= 0 & value <= 1, "Binary classification threshold must be between 0 and 1 inclusive")
+  }
+  case class ConvergenceTolerance (value: Double) extends SparkParam
 }
+
 
 
 

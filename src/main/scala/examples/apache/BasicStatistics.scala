@@ -5,7 +5,7 @@ import org.apache.spark.ml.stat.{ChiSquareTest, Correlation}
 import org.apache.spark.sql.{Row, SparkSession}
 
 class Context() {
-  val spark = SparkSession.builder ().appName ("DocumentationTest").master ("local").getOrCreate ()
+  val spark: SparkSession = SparkSession.builder ().appName ("DocumentationTest").master ("local").getOrCreate ()
 }
 
 case class ChiSquareResults (
@@ -14,7 +14,7 @@ case class ChiSquareResults (
   statistics: Vector
 )
 
-object ExCorrelation {
+object SparkCorrelation {
   def correlate(context: SparkSession, data: Seq[Vector], method: String): Matrix = {
     import context.implicits._
     val df = data.map(Tuple1.apply).toDF("features")
@@ -23,7 +23,7 @@ object ExCorrelation {
   }
 }
 
-object ExHypothesisTesting {
+object SparkHypothesisTesting {
   def chiSquareTest(context: SparkSession, data: Seq[(Double, Vector)]): ChiSquareResults = {
     import context.implicits._
     val df = data.toDF("label", "features")

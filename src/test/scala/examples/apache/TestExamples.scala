@@ -1,6 +1,5 @@
 package examples.apache
 
-import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
 import org.specs2.Specification
 import examples.apache.TestData._
 
@@ -21,28 +20,42 @@ class TestExamples extends Specification {
   """
 
   def testPearsonCorrelation = {
-    ExCorrelation.correlate(context, Inputs.correlation, "pearson").toString.must_==(Outputs.pearson.toString)
+    SparkCorrelation.correlate(context, Inputs.correlation, "pearson").toString.must_==(Outputs.pearson.toString)
   }
 
   def testSpearmanCorrelation = {
-    ExCorrelation.correlate(context, Inputs.correlation, "spearman").toString.must_==(Outputs.spearman.toString)
+    SparkCorrelation.correlate(context, Inputs.correlation, "spearman").toString.must_==(Outputs.spearman.toString)
   }
 
   def testChiSquared = {
-    ExHypothesisTesting.chiSquareTest(context, Inputs.chiSquared).must_==(Outputs.chiSquared)
+    SparkHypothesisTesting.chiSquareTest(context, Inputs.chiSquared).must_==(Outputs.chiSquared)
   }
 
   def testTrainLogisticRegressionModel = {
-    Inputs.logisticRegressionModel.coefficientMatrix.toArray.must_==(Outputs.logisticRegressionModelCoefficients).and(
-      Inputs.logisticRegressionModel.intercept.must_==(Outputs.logisticRegressionModelIntercept)
+    Inputs.trainedLogisticRegressionModel.coefficientMatrix.toArray.must_==(Outputs.logisticRegressionModelCoefficients).and(
+      Inputs.trainedLogisticRegressionModel.intercept.must_==(Outputs.logisticRegressionModelIntercept)
     )
   }
 
+  def testTestLogisticRegressionModel = {
+
+  }
+
   def testParamValidation = {
-    ParamElasticNet(1.3).must(throwA[IllegalArgumentException]("Elastic net parameter must be between 0 and 1 inclusive")).and(
-      ParamElasticNet(-0.3).must(throwA[IllegalArgumentException]("Elastic net parameter must be between 0 and 1 inclusive")).and(
-        ParamElasticNet(0.5).must(not(throwA[IllegalArgumentException]("Elastic net parameter must be between 0 and 1 inclusive")))
-      )
+    Param.ElasticNet(1.3).must(throwA[IllegalArgumentException]("Elastic net parameter must be between 0 and 1 inclusive")).and(
+      Param.ElasticNet(-0.3).must(throwA[IllegalArgumentException]("Elastic net parameter must be between 0 and 1 inclusive"))
+    ).and(
+      Param.ElasticNet(0.3).must(not(throwA[IllegalArgumentException]))
+    ).and(
+      Param.MaxIterations(-3).must(throwA[IllegalArgumentException]("Max number of iterations must be greater than 0"))
+    ).and(
+      Param.MaxIterations(3).must(not(throwA[IllegalArgumentException]))
+    ).and(
+      Param.ClassificationThreshold(1.3).must(throwA[IllegalArgumentException]("Binary classification threshold must be between 0 and 1 inclusive"))
+    ).and(
+      Param.ClassificationThreshold(-0.3).must(throwA[IllegalArgumentException]("Binary classification threshold must be between 0 and 1 inclusive"))
+    ).and(
+      Param.ClassificationThreshold(0.3).must(not(throwA[IllegalArgumentException]))
     )
   }
 
@@ -57,7 +70,7 @@ class TestExamples extends Specification {
   }
 
   def testExampleClassificationDetails = {
-    Inputs.classificationModelSummmary.objectiveHistory.must_==(Outputs.classificationModelSummary).and(
+    Inputs.classificationModelSummary.objectiveHistory.must_==(Outputs.classificationModelSummary).and(
       Inputs.classificationModelBinarySummary.areaUnderROC.must_==(Outputs.classificationROCArea)
     )
   }

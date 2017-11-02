@@ -7,7 +7,21 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object TestData {
   val context: SparkSession = new Context().spark
-  val regressionTrainingData: DataFrame = context.read.format("libsvm").load("data/mllib/sample_libsvm_data.txt")
+
+  val logisticRegressionTrainData: DataFrame = context.createDataFrame(Seq(
+    (1.0, Vectors.dense(0.0, 1.1, 0.1)),
+    (0.0, Vectors.dense(2.0, 1.0, -1.0)),
+    (0.0, Vectors.dense(2.0, 1.3, 1.0)),
+    (1.0, Vectors.dense(0.0, 1.2, -0.5))
+  )).toDF("label", "features")
+
+  val logisticRegressionTestData: DataFrame = context.createDataFrame(Seq(
+    (1.0, Vectors.dense(-1.0, 1.5, 1.3)),
+    (0.0, Vectors.dense(3.0, 2.0, -0.1)),
+    (1.0, Vectors.dense(0.0, 2.2, -1.5))
+  )).toDF("label", "features")
+
+  val classificationTrainingData: DataFrame = context.read.format("libsvm").load("data/mllib/sample_libsvm_data.txt")
 
   object Inputs {
     val correlation: Seq[Vector] = Seq(
@@ -26,26 +40,29 @@ object TestData {
       (1.0, Vectors.dense(3.5, 40.0))
     )
 
-    val logisticRegressionModel: LogisticRegressionModel = SparkLogisticRegression.trainModel(new LogisticRegression, context.createDataFrame(Seq(
-      (1.0, Vectors.dense(0.0, 1.1, 0.1)),
-      (0.0, Vectors.dense(2.0, 1.0, -1.0)),
-      (0.0, Vectors.dense(2.0, 1.3, 1.0)),
-      (1.0, Vectors.dense(0.0, 1.2, -0.5))
-    )).toDF("label", "features"))
+    val logisticRegression: LogisticRegression = new LogisticRegression
+
+    val trainedLogisticRegressionModel: LogisticRegressionModel = {
+      SparkLogisticRegression.trainModel(logisticRegression, logisticRegressionTrainData)
+    }
+
+    val testedLogisticRegressionModel: LogisticRegressionModel = {
+      SparkLogisticRegression.testModel(trainedLogisticRegressionModel, logisticRegressionTestData)
+    }
 
     val classificationFittedModel: LogisticRegressionModel = {
-      val model = new LogisticRegression().setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8)
-      SparkLogisticRegression.trainModel(model, regressionTrainingData)
+      val model = logisticRegression.setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8)
+      SparkLogisticRegression.trainModel(model, classificationTrainingData)
     }
 
     val classificationMultinomialModel: LogisticRegressionModel = {
-      val multinomialModel = new LogisticRegression().setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8).setFamily("multinomial")
-      SparkLogisticRegression.trainModel(multinomialModel, regressionTrainingData)
+      val multinomialModel = logisticRegression.setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8).setFamily("multinomial")
+      SparkLogisticRegression.trainModel(multinomialModel, classificationTrainingData)
     }
 
-    val classificationModelSummmary: LogisticRegressionTrainingSummary = classificationFittedModel.summary
+    val classificationModelSummary: LogisticRegressionTrainingSummary = SparkLogisticRegression.trainingSummary(classificationFittedModel)
 
-    val classificationModelBinarySummary: BinaryLogisticRegressionSummary = classificationModelSummmary.asInstanceOf[BinaryLogisticRegressionSummary]
+    val classificationModelBinarySummary: BinaryLogisticRegressionSummary = SparkLogisticRegression.binarySummary(classificationFittedModel)
 
     val classificationReceiverOperatingCharacteristic: DataFrame = classificationModelBinarySummary.roc
   }

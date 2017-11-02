@@ -18,7 +18,7 @@ object SparkLogisticRegression {
   def testModel(transformer: LogisticRegressionModel, testSet: DataFrame) = {
     transformer.transform(testSet).select("features", "label", "myProbability", "prediction").collect().foreach {
       case Row(features: Vector, label: Double, prob: Vector, prediction: Double) =>
-        ModelTestResults(features, label, prob, prediction)
+        ModelTestResults(label, features, prob, prediction)
     }
     transformer
   }
@@ -35,7 +35,7 @@ object SparkLogisticRegression {
     binarySummary(trainedModel).roc
   }
 
-  def maximiseFMeasure(context: SparkSession, trainedModel: LogisticRegressionModel) = {
+  def maximiseFMeasure(context: SparkSession, trainedModel: LogisticRegressionModel): LogisticRegressionModel = {
     import context.implicits._
     val fMeasure = binarySummary(trainedModel).fMeasureByThreshold
     val maxFMeasure = fMeasure.select(max("F-Measure")).head().getDouble(0)
