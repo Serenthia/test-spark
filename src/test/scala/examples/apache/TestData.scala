@@ -1,114 +1,109 @@
 package examples.apache
 
 import breeze.linalg.CSCMatrix
-import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression, LogisticRegressionModel, LogisticRegressionTrainingSummary}
-import org.apache.spark.ml.linalg.{Matrices, Matrix, Vector, Vectors}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.ml.classification.{ BinaryLogisticRegressionSummary, LogisticRegression, LogisticRegressionModel, LogisticRegressionTrainingSummary }
+import org.apache.spark.ml.linalg.{ Matrices, Matrix, Vector, Vectors }
+import org.apache.spark.sql.{ DataFrame, Row, SparkSession }
 
-object TestData {
+class TestData {
   val context: SparkSession = new Context().spark
 
-  val logisticRegressionTrainData: DataFrame = context.createDataFrame(Seq(
-    (1.0, Vectors.dense(0.0, 1.1, 0.1)),
-    (0.0, Vectors.dense(2.0, 1.0, -1.0)),
-    (0.0, Vectors.dense(2.0, 1.3, 1.0)),
-    (1.0, Vectors.dense(0.0, 1.2, -0.5))
-  )).toDF("label", "features")
+  val logisticRegressionTrainData: DataFrame = {
+    context.createDataFrame(Seq(
+      (1.0, Vectors.dense(0.0, 1.1, 0.1)),
+      (0.0, Vectors.dense(2.0, 1.0, -1.0)),
+      (0.0, Vectors.dense(2.0, 1.3, 1.0)),
+      (1.0, Vectors.dense(0.0, 1.2, -0.5)))).toDF("label", "features")
+  }
 
-  val logisticRegressionTestData: DataFrame = context.createDataFrame(Seq(
-    (1.0, Vectors.dense(-1.0, 1.5, 1.3)),
-    (0.0, Vectors.dense(3.0, 2.0, -0.1)),
-    (1.0, Vectors.dense(0.0, 2.2, -1.5))
-  )).toDF("label", "features")
+  val logisticRegressionTestData: DataFrame = {
+    context.createDataFrame(Seq(
+      (1.0, Vectors.dense(-1.0, 1.5, 1.3)),
+      (0.0, Vectors.dense(3.0, 2.0, -0.1)),
+      (1.0, Vectors.dense(0.0, 2.2, -1.5)))).toDF("label", "features")
+  }
 
   val classificationTrainingData: DataFrame = context.read.format("libsvm").load("data/mllib/sample_libsvm_data.txt")
 
   object Inputs {
-    val correlation: Seq[Vector] = Seq(
-      Vectors.sparse(4, Seq((0, 1.0), (3, -2.0))),
-      Vectors.dense(4.0, 5.0, 0.0, 3.0),
-      Vectors.dense(6.0, 7.0, 0.0, 8.0),
-      Vectors.sparse(4, Seq((0, 9.0), (3, 1.0)))
-    )
+    val correlation: Seq[Vector] = {
+      Seq(
+        Vectors.sparse(4, Seq((0, 1.0), (3, -2.0))),
+        Vectors.dense(4.0, 5.0, 0.0, 3.0),
+        Vectors.dense(6.0, 7.0, 0.0, 8.0),
+        Vectors.sparse(4, Seq((0, 9.0), (3, 1.0))))
+    }
 
-    val chiSquared: Seq[(Double, Vector)] = Seq(
-      (0.0, Vectors.dense(0.5, 10.0)),
-      (0.0, Vectors.dense(1.5, 20.0)),
-      (1.0, Vectors.dense(1.5, 30.0)),
-      (0.0, Vectors.dense(3.5, 30.0)),
-      (0.0, Vectors.dense(3.5, 40.0)),
-      (1.0, Vectors.dense(3.5, 40.0))
-    )
+    val chiSquared: Seq[(Double, Vector)] = {
+      Seq(
+        (0.0, Vectors.dense(0.5, 10.0)),
+        (0.0, Vectors.dense(1.5, 20.0)),
+        (1.0, Vectors.dense(1.5, 30.0)),
+        (0.0, Vectors.dense(3.5, 30.0)),
+        (0.0, Vectors.dense(3.5, 40.0)),
+        (1.0, Vectors.dense(3.5, 40.0)))
+    }
 
     val logisticRegression: LogisticRegression = new LogisticRegression
 
     val trainedLogisticRegressionModel: LogisticRegressionModel = {
-      SparkLogisticRegression.trainModel(logisticRegression, logisticRegressionTrainData)
+      SparkLogisticRegression.trainModel(logisticRegression, logisticRegressionTrainData, 10, 0.3, 0.8)
     }
 
-    val testedLogisticRegressionModel: LogisticRegressionModel = {
+    val testedLogisticRegressionModel: DataFrame = {
       SparkLogisticRegression.testModel(trainedLogisticRegressionModel, logisticRegressionTestData)
     }
 
     val classificationFittedModel: LogisticRegressionModel = {
-      val model = logisticRegression.setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8)
-      SparkLogisticRegression.trainModel(model, classificationTrainingData)
+      SparkLogisticRegression.trainModel(logisticRegression, classificationTrainingData, 10, 0.3, 0.8)
     }
 
     val classificationMultinomialModel: LogisticRegressionModel = {
-      val multinomialModel = logisticRegression.setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8).setFamily("multinomial")
-      SparkLogisticRegression.trainModel(multinomialModel, classificationTrainingData)
+      SparkLogisticRegression.trainModel(logisticRegression, classificationTrainingData, 10, 0.3, 0.8, "multinomial")
     }
-
-    val classificationModelSummary: LogisticRegressionTrainingSummary = SparkLogisticRegression.trainingSummary(classificationFittedModel)
-
-    val classificationModelBinarySummary: BinaryLogisticRegressionSummary = SparkLogisticRegression.binarySummary(classificationFittedModel)
-
-    val classificationReceiverOperatingCharacteristic: DataFrame = classificationModelBinarySummary.roc
   }
 
   object Outputs {
-    val pearson: Matrix = Matrices.dense(4, 4,
-      Array(
-        1.0, 0.055641488407465814, Double.NaN, 0.4004714203168137,
-        0.055641488407465814, 1.0, Double.NaN, 0.9135958615342522,
-        Double.NaN, Double.NaN, 1.0, Double.NaN,
-        0.4004714203168137, 0.9135958615342522, Double.NaN, 1.0
-      )
-    )
+    val pearson: Matrix = {
+      Matrices.dense(4, 4,
+        Array(
+          1.0, 0.055641488407465814, Double.NaN, 0.4004714203168137,
+          0.055641488407465814, 1.0, Double.NaN, 0.9135958615342522,
+          Double.NaN, Double.NaN, 1.0, Double.NaN,
+          0.4004714203168137, 0.9135958615342522, Double.NaN, 1.0))
+    }
 
-    val spearman: Matrix = Matrices.dense(4, 4,
-      Array(
-        1.0, 0.10540925533894532, Double.NaN, 0.40000000000000174,
-        0.10540925533894532, 1.0, Double.NaN, 0.9486832980505141,
-        Double.NaN, Double.NaN, 1.0, Double.NaN,
-        0.40000000000000174, 0.9486832980505141, Double.NaN, 1.0
-      )
-    )
+    val spearman: Matrix = {
+      Matrices.dense(4, 4,
+        Array(
+          1.0, 0.10540925533894532, Double.NaN, 0.40000000000000174,
+          0.10540925533894532, 1.0, Double.NaN, 0.9486832980505141,
+          Double.NaN, Double.NaN, 1.0, Double.NaN,
+          0.40000000000000174, 0.9486832980505141, Double.NaN, 1.0))
+    }
 
     val chiSquared: ChiSquareResults = {
       ChiSquareResults(
-        Vectors.dense(0.6872892787909721,0.6822703303362126),
+        Vectors.dense(0.6872892787909721, 0.6822703303362126),
         "[2,3]",
-        Vectors.dense(0.75, 1.5)
-      )
+        Vectors.dense(0.75, 1.5))
     }
 
     val logisticRegressionModelCoefficients: Array[Double] = Array(-19.086478256375067, 16.278339464295065, -2.494930802874724)
 
     val logisticRegressionModelIntercept: Double = 0.40698754640912554
 
+    val logisticRegressionThreshold: Double = 0.9999999857094577
+
     val classificationModelCoefficients: Vector = Vectors.sparse(
       692,
-      Array(244,263,272,300,301,328,350,351,378,379,405,406,407,428,433,434,455,456,461,462,483,484,489,490,496,511,512,517,539,540,568),
+      Array(244, 263, 272, 300, 301, 328, 350, 351, 378, 379, 405, 406, 407, 428, 433, 434, 455, 456, 461, 462, 483, 484, 489, 490, 496, 511, 512, 517, 539, 540, 568),
       Array(
-        -7.353983524188197E-5,-9.102738505589466E-5,-1.9467430546904298E-4,-2.0300642473486668E-4,-3.1476183314863995E-5,-6.842977602660743E-5,1.5883626898239883E-5,
-        1.4023497091372047E-5,3.5432047524968605E-4,1.1443272898171087E-4,1.0016712383666666E-4,6.014109303795481E-4,2.840248179122762E-4,-1.1541084736508837E-4,
-        3.85996886312906E-4,6.35019557424107E-4,-1.1506412384575676E-4,-1.5271865864986808E-4,2.804933808994214E-4,6.070117471191634E-4,-2.008459663247437E-4,
-        -1.421075579290126E-4,2.739010341160883E-4,2.7730456244968115E-4,-9.838027027269332E-5,-3.808522443517704E-4,-2.5315198008555033E-4,2.7747714770754307E-4,
-        -2.443619763919199E-4,-0.0015394744687597765,-2.3073328411331293E-4
-      )
-    )
+        -7.353983524188197E-5, -9.102738505589466E-5, -1.9467430546904298E-4, -2.0300642473486668E-4, -3.1476183314863995E-5, -6.842977602660743E-5, 1.5883626898239883E-5,
+        1.4023497091372047E-5, 3.5432047524968605E-4, 1.1443272898171087E-4, 1.0016712383666666E-4, 6.014109303795481E-4, 2.840248179122762E-4, -1.1541084736508837E-4,
+        3.85996886312906E-4, 6.35019557424107E-4, -1.1506412384575676E-4, -1.5271865864986808E-4, 2.804933808994214E-4, 6.070117471191634E-4, -2.008459663247437E-4,
+        -1.421075579290126E-4, 2.739010341160883E-4, 2.7730456244968115E-4, -9.838027027269332E-5, -3.808522443517704E-4, -2.5315198008555033E-4, 2.7747714770754307E-4,
+        -2.443619763919199E-4, -0.0015394744687597765, -2.3073328411331293E-4))
 
     val classificationModelIntercept: Double = 0.22456315961250325
 
@@ -179,11 +174,14 @@ object TestData {
       Vectors.dense(-0.12065879445860686, 0.12065879445860686)
     }
 
-    val classificationModelSummary: Array[Double] = Array(
-      0.6833149135741672, 0.6662875751473734, 0.6217068546034618, 0.6127265245887887, 0.6060347986802873, 0.6031750687571562, 0.5969621534836274, 0.5940743031983118,
-      0.5906089243339022, 0.5894724576491042, 0.5882187775729587
-    )
+    val classificationModelSummary: Array[Double] = {
+      Array(
+        0.6833149135741672, 0.6662875751473734, 0.6217068546034618, 0.6127265245887887, 0.6060347986802873, 0.6031750687571562, 0.5969621534836274, 0.5940743031983118,
+        0.5906089243339022, 0.5894724576491042, 0.5882187775729587)
+    }
 
     val classificationROCArea: Double = 1.0
+
+    val classificationROC: Array[(Double, Double)] = Array((0.0, 0.0), (0.0, 0.017543859649122806), (0.0, 0.03508771929824561), (0.0, 0.05263157894736842), (0.0, 0.07017543859649122))
   }
 }

@@ -1,18 +1,13 @@
 package examples.apache
 
-import org.apache.spark.ml.linalg.{Matrix, Vector}
-import org.apache.spark.ml.stat.{ChiSquareTest, Correlation}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.ml.linalg.{ Matrix, Vector }
+import org.apache.spark.ml.stat.{ ChiSquareTest, Correlation }
+import org.apache.spark.sql.{ Row, SparkSession }
 
-class Context() {
-  val spark: SparkSession = SparkSession.builder ().appName ("DocumentationTest").master ("local").getOrCreate ()
-}
-
-case class ChiSquareResults (
+case class ChiSquareResults(
   pValues: Vector,
   degreesOfFreedom: String,
-  statistics: Vector
-)
+  statistics: Vector)
 
 object SparkCorrelation {
   def correlate(context: SparkSession, data: Seq[Vector], method: String): Matrix = {
