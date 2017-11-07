@@ -1,6 +1,7 @@
 package examples.apache
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.ml.linalg.Vector
+import org.apache.spark.sql.{Row, SparkSession}
 import org.specs2.Specification
 
 class TestExamples extends Specification {
@@ -43,7 +44,11 @@ class TestExamples extends Specification {
   }
 
   def testTestLogisticRegressionModel = {
-    data.Inputs.testedLogisticRegressionModel.toString.must_==(data.Outputs.logisticRegressionModelCoefficients)
+    val model = data.Inputs.testedLogisticRegressionModel.select("features", "label", "probability", "prediction")
+
+    model.collect.foreach { case Row(features: Vector, label: Double, prob: Vector, prediction: Double) => (features, label, prob, prediction) }.must_==(
+      data.Outputs.testedLogisticRegressionModel.collect.foreach { case Row(features: Vector, label: Double, prob: Vector, prediction: Double) => (features, label, prob, prediction) }
+    )
   }
 
   def testMaxRegressionFMeasure = {

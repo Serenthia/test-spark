@@ -13,31 +13,18 @@ object SparkLogisticRegression {
     probability: Vector,
     prediction: Double)
 
-  /*def createParamMap(params: List[SparkParam]): ParamMap = {
-    val paramMap = new ParamMap()
-    params.map(p => paramMap.put(p.paramPair))
-    paramMap
-  }*/
-
   // This is a Transformer (produced by training the Estimator)
-  def trainModel(estimator: LogisticRegression, trainingSet: DataFrame, maxIterations: Int, regularisation: Double = 0.5, elasticNet: Double = 0.5, family: String = "auto"): LogisticRegressionModel = {
-    /*val paramMap = createParamMap(List(
-      MaxIterations(maxIterations),
-      Regularisation(regularisation),
-      ElasticNet(elasticNet)))*/
+  def trainModel(estimator: LogisticRegression, trainingSet: DataFrame, maxIterations: Int, regularisation: Double = 0.3, elasticNet: Double = 0.8, family: String = "auto"): LogisticRegressionModel = {
     estimator
-      .fit(trainingSet)
       .setMaxIter(maxIterations)
       .setRegParam(regularisation)
       .setElasticNetParam(elasticNet)
       .setFamily(family)
+      .fit(trainingSet)
   }
 
   def testModel(transformer: LogisticRegressionModel, testSet: DataFrame): DataFrame = {
-    transformer.transform(testSet).select("features", "label", "probability", "prediction") /*.collect().foreach {
-      case Row(features: Vector, label: Double, prob: Vector, prediction: Double) =>
-        ModelTestResults(label, features, prob, prediction)
-    }*/
+    transformer.transform(testSet).select("features", "label", "probability", "prediction")
   }
 
   def trainingSummary(trainedModel: LogisticRegressionModel): LogisticRegressionTrainingSummary = {

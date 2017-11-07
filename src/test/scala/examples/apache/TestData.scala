@@ -89,11 +89,15 @@ class TestData {
         Vectors.dense(0.75, 1.5))
     }
 
-    val logisticRegressionModelCoefficients: Array[Double] = Array(-19.086478256375067, 16.278339464295065, -2.494930802874724)
+    val testedLogisticRegressionModel: DataFrame = context.createDataFrame(Seq(
+      (Vectors.dense(-1.0, 1.5, 1.3), 1.0, Vectors.dense(0.2523824340381209, 0.7476175659618791), 0.5)
+    )).toDF("features", "label", "probability", "prediction")
 
-    val logisticRegressionModelIntercept: Double = 0.40698754640912554
+    val logisticRegressionModelCoefficients: Array[Double] = Array(-0.6108568753771977, -0.0, 0.0)
 
-    val logisticRegressionThreshold: Double = 0.9999999857094577
+    val logisticRegressionModelIntercept: Double = 0.47508916388274547
+
+    val logisticRegressionThreshold: Double = 0.6165875837363588
 
     val classificationModelCoefficients: Vector = Vectors.sparse(
       692,
