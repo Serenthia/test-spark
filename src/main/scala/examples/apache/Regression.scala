@@ -41,6 +41,7 @@ object SparkLogisticRegression {
 
   def maximiseFMeasure(context: SparkSession, trainedModel: LogisticRegressionModel): LogisticRegressionModel = {
     import context.implicits._
+
     val fMeasure = binarySummary(trainedModel).fMeasureByThreshold
     val maxFMeasure = fMeasure.select(max("F-Measure")).head().getDouble(0)
     val bestThreshold = fMeasure.where($"F-Measure" === maxFMeasure).select("threshold").head().getDouble(0)

@@ -1,18 +1,11 @@
 package examples.apache
 
 import org.apache.spark.ml.linalg.Vector
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{ Row, SparkSession }
 import org.specs2.Specification
 
-class TestExamples extends Specification {
+class TestLogisticRegression extends Specification {
   def is = s2"""
-      Correlations
-        can use Pearson method $testPearsonCorrelation
-        can use Spearman method $testSpearmanCorrelation
-
-      Hypothesis Testing
-        can use Chi-squared method $testChiSquared
-
       Logistic Regression
         can train logistic regression model $testTrainLogisticRegressionModel
         can test logistic regression model $testTestLogisticRegressionModel
@@ -21,20 +14,8 @@ class TestExamples extends Specification {
         obtain model info using Classification example data $testExampleClassificationDetails
   """
 
-  val data = new TestData
+  val data: TestData = new TestData
   val context: SparkSession = data.context
-
-  def testPearsonCorrelation = {
-    SparkCorrelation.correlate(context, data.Inputs.correlation, "pearson").toString.must_==(data.Outputs.pearson.toString)
-  }
-
-  def testSpearmanCorrelation = {
-    SparkCorrelation.correlate(context, data.Inputs.correlation, "spearman").toString.must_==(data.Outputs.spearman.toString)
-  }
-
-  def testChiSquared = {
-    SparkHypothesisTesting.chiSquareTest(context, data.Inputs.chiSquared).must_==(data.Outputs.chiSquared)
-  }
 
   def testTrainLogisticRegressionModel = {
     val model = data.Inputs.trainedLogisticRegressionModel
@@ -47,23 +28,11 @@ class TestExamples extends Specification {
     val model = data.Inputs.testedLogisticRegressionModel.select("features", "label", "probability", "prediction")
 
     model.collect.foreach { case Row(features: Vector, label: Double, prob: Vector, prediction: Double) => (features, label, prob, prediction) }.must_==(
-      data.Outputs.testedLogisticRegressionModel.collect.foreach { case Row(features: Vector, label: Double, prob: Vector, prediction: Double) => (features, label, prob, prediction) }
-    )
+      data.Outputs.testedLogisticRegressionModel.collect.foreach { case Row(features: Vector, label: Double, prob: Vector, prediction: Double) => (features, label, prob, prediction) })
   }
 
   def testMaxRegressionFMeasure = {
     SparkLogisticRegression.maximiseFMeasure(context, data.Inputs.trainedLogisticRegressionModel).getThreshold.must_==(data.Outputs.logisticRegressionThreshold)
-  }
-
-  def testParamValidation = {
-    /*    Param.ElasticNet(1.3).must(throwA[IllegalArgumentException]("Elastic net parameter must be between 0 and 1 inclusive")).and(
-      Param.ElasticNet(-0.3).must(throwA[IllegalArgumentException]("Elastic net parameter must be between 0 and 1 inclusive"))).and(
-        Param.ElasticNet(0.3).must(not(throwA[IllegalArgumentException]))).and(
-          Param.MaxIterations(-3).must(throwA[IllegalArgumentException]("Max number of iterations must be greater than 0"))).and(
-            Param.MaxIterations(3).must(not(throwA[IllegalArgumentException]))).and(
-              Param.ClassificationThreshold(1.3).must(throwA[IllegalArgumentException]("Binary classification threshold must be between 0 and 1 inclusive"))).and(
-                Param.ClassificationThreshold(-0.3).must(throwA[IllegalArgumentException]("Binary classification threshold must be between 0 and 1 inclusive"))).and(
-                  Param.ClassificationThreshold(0.3).must(not(throwA[IllegalArgumentException])))*/
   }
 
   def testExampleClassificationFitting = {

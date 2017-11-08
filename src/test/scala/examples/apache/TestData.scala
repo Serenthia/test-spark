@@ -1,9 +1,10 @@
 package examples.apache
 
 import breeze.linalg.CSCMatrix
-import org.apache.spark.ml.classification.{ BinaryLogisticRegressionSummary, LogisticRegression, LogisticRegressionModel, LogisticRegressionTrainingSummary }
+import org.apache.spark.ml.classification.{ LogisticRegression, LogisticRegressionModel }
 import org.apache.spark.ml.linalg.{ Matrices, Matrix, Vector, Vectors }
-import org.apache.spark.sql.{ DataFrame, Row, SparkSession }
+import org.apache.spark.mllib.recommendation.Rating
+import org.apache.spark.sql.{ DataFrame, Dataset, SparkSession }
 
 class TestData {
   val context: SparkSession = new Context().spark
@@ -24,6 +25,7 @@ class TestData {
   }
 
   val classificationTrainingData: DataFrame = context.read.format("libsvm").load("data/mllib/sample_libsvm_data.txt")
+  val rankingTrainingData: DataFrame = context.read.format("libsvm").load("data/mllib/sample_movielens_data.txt")
 
   object Inputs {
     val correlation: Seq[Vector] = {
@@ -47,7 +49,7 @@ class TestData {
     val logisticRegression: LogisticRegression = new LogisticRegression
 
     val trainedLogisticRegressionModel: LogisticRegressionModel = {
-      SparkLogisticRegression.trainModel(logisticRegression, logisticRegressionTrainData, 10, 0.3, 0.8)
+      SparkLogisticRegression.trainModel(logisticRegression, logisticRegressionTrainData, 10)
     }
 
     val testedLogisticRegressionModel: DataFrame = {
@@ -55,11 +57,23 @@ class TestData {
     }
 
     val classificationFittedModel: LogisticRegressionModel = {
-      SparkLogisticRegression.trainModel(logisticRegression, classificationTrainingData, 10, 0.3, 0.8)
+      SparkLogisticRegression.trainModel(logisticRegression, classificationTrainingData, 10)
     }
 
     val classificationMultinomialModel: LogisticRegressionModel = {
       SparkLogisticRegression.trainModel(logisticRegression, classificationTrainingData, 10, 0.3, 0.8, "multinomial")
+    }
+
+    val ratings: Dataset[Rating] = {
+      SparkRanking.readInputData(context, "data/mllib/sample_movielens_data.txt")
+    }
+
+    val ratingsCharacteristics: SparkRanking.RatingsCharacteristics = {
+      SparkRanking.analyseRatings(context, ratings)
+    }
+
+    val binarisedRatings: Array[Rating] = {
+      SparkRanking.binariseRatings(context, ratings).collect.take(5)
     }
   }
 
@@ -90,8 +104,7 @@ class TestData {
     }
 
     val testedLogisticRegressionModel: DataFrame = context.createDataFrame(Seq(
-      (Vectors.dense(-1.0, 1.5, 1.3), 1.0, Vectors.dense(0.2523824340381209, 0.7476175659618791), 0.5)
-    )).toDF("features", "label", "probability", "prediction")
+      (Vectors.dense(-1.0, 1.5, 1.3), 1.0, Vectors.dense(0.2523824340381209, 0.7476175659618791), 0.5))).toDF("features", "label", "probability", "prediction")
 
     val logisticRegressionModelCoefficients: Array[Double] = Array(-0.6108568753771977, -0.0, 0.0)
 
@@ -187,5 +200,18 @@ class TestData {
     val classificationROCArea: Double = 1.0
 
     val classificationROC: Array[(Double, Double)] = Array((0.0, 0.0), (0.0, 0.017543859649122806), (0.0, 0.03508771929824561), (0.0, 0.05263157894736842), (0.0, 0.07017543859649122))
+
+    val inputFileFirstRow: Rating = {
+      Rating(0, 0, 1.2)
+    }
+
+    val inputFileCharacteristics: Map[String, Int] = {
+      Map(
+        "ratings" -> 10,
+        "users" -> 10,
+        "movies" -> 10)
+    }
+
+    val binarisedRatings: Array[Rating] = Array.empty
   }
 }
